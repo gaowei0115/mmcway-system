@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="com.uuzz.lottery.gateway.dao.GameMapper">
+
+	<!-- 查询玩法信息 -->
+	<select id="getAvailableGameInfo" resultType="gameEntity">
+		SELECT  
+			GAMECODE,
+			GAMEDRAW,
+			SALEBEGIN,			
+			SALEEND,
+			PAYBEGIN,		
+			PAYEND,
+			LOTTERYNO,
+			STATUS
+	    FROM sdtrade.sim_gw_draw@link_sdtrade_monitor
+	    WHERE TO_DATE(PAYBEGIN, 'YYYYMMDDHH24MISS') <![CDATA[<=]]> sysdate and PAID_STATUS = '0'
+	</select>
+	
+	<!-- 更新奖期表兑奖状态 -->
+	<update id="updateGameStatus" parameterType="gameEntity">
+		UPDATE sdtrade.sim_gw_draw@link_sdtrade_monitor
+			SET PAID_STATUS = 1 WHERE GAMECODE=#{gamecode} and GAMEDRAW=#{gamedraw} AND PAID_STATUS IN('0', '2')
+	</update>
+	
+	<!-- 验证游戏玩法新旧规则 -->
+	<select id="vaildateGamePeriodGule" parameterType="map" resultType="gameEntity">
+		SELECT  
+			GAMECODE,
+			GAMEDRAW,
+			SALEBEGIN,			
+			SALEEND,
+			PAYBEGIN,		
+			PAYEND,
+			LOTTERYNO,
+			STATUS
+	    FROM sdtrade.sim_gw_draw@link_sdtrade_monitor
+	    WHERE GAMECODE=#{gameCode} and GAMEDRAW=#{gameDraw} and DRAW_TYPE='4'
+	</select>
+	
+	<!-- 查询玩法信息 -->
+	<select id="queryGameInfo" parameterType="map" resultType="gameEntity">
+		SELECT  
+			GAMECODE,
+			GAMEDRAW,
+			SALEBEGIN,			
+			SALEEND,
+			PAYBEGIN,		
+			PAYEND,
+			LOTTERYNO,
+			STATUS,
+			DRAW_TYPE drawType
+	    FROM sdtrade.sim_gw_draw@link_sdtrade_monitor
+	    WHERE GAMECODE=#{gameCode} and GAMEDRAW=#{gameDraw}
+	</select>
+	
+	<!-- 查询大乐透奖期开奖日期同一天的排列五奖期（应对乐透周年庆） -->
+	<select id="queryGameInfoOfAnniversary" parameterType="map" resultType="gameEntity">
+		SELECT T1.GAMECODE,
+			   T1.GAMEDRAW,
+			   T1.SALEBEGIN,
+			   T1.SALEEND,
+			   T1.PAYBEGIN,		
+			   T1.PAYEND,
+			   T1.LOTTERYNO,
+			   T1.STATUS,
+			   T1.DRAW_TYPE drawType
+		  FROM (SELECT *
+		          FROM sdtrade.sim_gw_draw@link_sdtrade_monitor
+		         WHERE GAMECODE = #{anniversaryGameCode}
+		           AND SUBSTR(DRAWTIME, 0, 8) IN
+		               (SELECT SUBSTR(DRAWTIME, 0, 8)
+		                  FROM sdtrade.sim_gw_draw@link_sdtrade_monitor
+		                 WHERE GAMECODE =#{gameCode}
+		                   AND GAMEDRAW =#{gameDraw})
+		         ORDER BY DRAWTIME ASC) T1
+		 WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 验证是否是周年庆奖期 -->
+	<select id="validatePeriodAnniversary" parameterType="map" resultType="int">
+		SELECT COUNT(0)
+		  FROM sdtrade.sim_gw_draw@link_sdtrade_monitor 
+		  WHERE GAMECODE =#{gameCode}
+		        AND GAMEDRAW =#{gameDraw}
+		        AND DRAW_TYPE='8'
+	</select>
+	
+</mapper>
