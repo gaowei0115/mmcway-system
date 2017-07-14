@@ -24,9 +24,11 @@
 	
 	<!-- 实体对象定义别名 -->
 	<typeAliases>
+		<typeAlias type="com.mmc.boot.system.mmcab.domain.EodFileRecordEntity" alias="eodFileRecordEntity"/>
 	</typeAliases>
 	
 	<mappers>
+		<mapper resource="sqlmap/mapper/sqlmap-eod-file-record.xml"/>
 	</mappers>
 	
 </configuration>
